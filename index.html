@@ -2,42 +2,42 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>TP02 WebAR — Exercice 2</title>
+  <title>TP02 WebAR — Exercice 2 (corrigé)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#000000" />
-  <!-- A-Frame (1.3.0 recommandé pour AR.js) -->
+  <!-- A-Frame (1.3.0 recommandé avec AR.js) -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <!-- AR.js (A-Frame build) -->
+  <!-- AR.js (build A-Frame) -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; background: transparent; overflow: hidden; }
-    /* Petit panneau d'aide à l'écran */
-    #hint {
+    html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+    #hint, #status {
       position: fixed; left: 50%; transform: translateX(-50%);
-      bottom: 12px; padding: 8px 12px; border-radius: 10px;
-      background: rgba(0,0,0,.55); color: #fff; font: 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      z-index: 10; user-select: none;
+      color: #fff; font: 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: rgba(0,0,0,.55); padding: 8px 12px; border-radius: 10px; z-index: 10; user-select: none;
     }
+    #hint { bottom: 12px; }
+    #status { top: 12px; }
   </style>
 </head>
 <body>
-  <!-- Astuce à l'écran -->
-  <div id="hint">Autorise la caméra, puis pointe vers le marqueur <b>Hiro</b>.</div>
+  <!-- Aides à l'écran -->
+  <div id="status">En attente du marqueur Hiro…</div>
+  <div id="hint">Autorise la caméra, puis vise le marqueur <b>Hiro</b> (bord noir entier dans le cadre).</div>
 
-  <!-- Scène AR.js (embedded pour occuper la page) -->
+  <!-- Scène AR.js (configuration simple et robuste) -->
   <a-scene
     embedded
-    arjs="sourceType: webcam; facingMode: environment; detectionMode: mono; maxDetectionRate: 30; sourceWidth: 1280; sourceHeight: 720; videoTexture: true; debugUIEnabled: true;"
+    arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: true;"
     vr-mode-ui="enabled: false"
-    renderer="alpha: true; logarithmicDepthBuffer: true"
+    renderer="logarithmicDepthBuffer: true"
   >
-    <!-- Marqueur Hiro -->
-    <a-marker id="hiroMarker" preset="hiro" emitevents="true" patternRatio="0.5" smooth="true" smoothCount="5" smoothTolerance="0.01" smoothThreshold="2">
-      <!-- Boîte semi-transparente qui tourne en continu
-           shader: flat => visible sans lumière explicite -->
+    <!-- Marqueur Hiro (sans patternRatio ni smoothing pendant le debug) -->
+    <a-marker id="hiroMarker" preset="hiro" emitevents="true">
+      <!-- Objet simple + shader flat (pas de lumière requise) -->
       <a-box id="rotBox"
              position="0 0.5 0"
-             material="color: #4CC3D9; opacity: 0.6; shader: flat"
+             material="color: #4CC3D9; opacity: 0.65; shader: flat"
              animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear;">
       </a-box>
     </a-marker>
@@ -47,32 +47,19 @@
   </a-scene>
 
   <script>
-    // Affiche l'état de détection du marqueur et masque l'astuce au besoin
+    // Met à jour l'UI selon la détection
     document.addEventListener('DOMContentLoaded', () => {
       const hint = document.getElementById('hint');
+      const status = document.getElementById('status');
       const marker = document.getElementById('hiroMarker');
-
-      // Petit bandeau de statut
-      const status = document.createElement('div');
-      status.style.position = 'fixed';
-      status.style.top = '12px';
-      status.style.left = '50%';
-      status.style.transform = 'translateX(-50%)';
-      status.style.padding = '6px 10px';
-      status.style.borderRadius = '8px';
-      status.style.background = 'rgba(0,0,0,.55)';
-      status.style.color = '#fff';
-      status.style.font = '14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
-      status.style.zIndex = '10';
-      status.textContent = 'En attente du marqueur Hiro…';
-      document.body.appendChild(status);
 
       const onFound = () => {
         if (hint) hint.style.display = 'none';
-        status.textContent = 'Marqueur détecté ✔';
+        if (status) status.textContent = 'Marqueur détecté ✔';
       };
       const onLost = () => {
-        status.textContent = 'Marqueur perdu… approchez et stabilisez le motif.';
+        if (hint) hint.style.display = 'block';
+        if (status) status.textContent = 'Marqueur perdu… rapprochez/stabilisez le motif.';
       };
 
       marker.addEventListener('markerFound', onFound);
@@ -80,5 +67,4 @@
     });
   </script>
 </body>
-
 </html>

@@ -2,49 +2,75 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>TP02 WebAR — Exercice 2+3 (caméra + détection + interaction)</title>
+  <title>TP02 WebAR — Ex2+3+4+6</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#000000" />
-  <!-- A-Frame 1.3.0 (stable avec AR.js) -->
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <!-- AR.js (build A-Frame) -->
+  <!-- AR.js (A-Frame build) -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
-    /* Laisse voir la vidéo derrière */
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: transparent; }
-    canvas.a-canvas { background: transparent !important; z-index: 1; position: relative; }
+    /* Caméra visible derrière la scène */
+    html, body { margin:0; padding:0; height:100%; overflow:hidden; background:transparent; }
+    canvas.a-canvas { background:transparent !important; z-index:1; position:relative; }
+    #arjs-video { position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; z-index:0; }
 
-    /* La vidéo créée par AR.js : plein écran et derrière le canvas */
-    #arjs-video {
-      position: fixed; inset: 0;
-      width: 100vw; height: 100vh; object-fit: cover;
-      z-index: 0;
+    /* Aides + petite nav */
+    #hint, #status, #nav {
+      position:fixed; left:50%; transform:translateX(-50%);
+      color:#fff; font:14px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:rgba(0,0,0,.55); padding:8px 12px; border-radius:10px; z-index:10; user-select:none;
     }
+    #hint{bottom:12px;} #status{top:12px;}
+    #nav{top:48px;}
+    #nav a{color:#fff; text-decoration:underline; margin:0 6px;}
 
-    #hint, #status {
-      position: fixed; left: 50%; transform: translateX(-50%);
-      color: #fff; font: 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: rgba(0,0,0,.55); padding: 8px 12px; border-radius: 10px; z-index: 10; user-select: none;
+    /* UI DOM overlay (Ex.6) : cachée par défaut */
+    #ui{
+      position:fixed; left:12px; bottom:12px; z-index:20;
+      background:rgba(255,255,255,.92); border-radius:12px; padding:12px 14px;
+      box-shadow:0 6px 24px rgba(0,0,0,.18);
+      font:14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      display:none;
     }
-    #hint { bottom: 12px; }
-    #status { top: 12px; }
+    #ui .row{margin:8px 0;} #ui .label{font-weight:600; margin-bottom:6px;}
+    #ui input[type="range"]{width:220px;}
+    #ui .palette button{border:0; border-radius:999px; width:28px; height:28px; margin-right:8px; cursor:pointer;}
+    #ui .palette button:active{transform:scale(0.95);}
   </style>
 </head>
 <body>
-  <!-- Aides à l'écran -->
+  <!-- Aides -->
   <div id="status">En attente du marqueur Hiro…</div>
-  <div id="hint">Autorise la caméra, puis vise le marqueur <b>Hiro</b> (bord noir entier dans le cadre).</div>
 
-  <!-- Scène AR.js : alpha pour transparence du canvas, pas de videoTexture -->
+  <div id="hint">Autorise la caméra, puis vise <b>Hiro</b> (bord noir entier dans le cadre).</div>
+
+  <!-- UI DOM overlay (Ex.6) -->
+  <div id="ui">
+    <div class="row">
+      <div class="label">Taille (0.1 → 3.0)</div>
+      <input id="size" type="range" min="0.1" max="3.0" step="0.1" value="1.0" />
+    </div>
+    <div class="row">
+      <div class="label">Couleur</div>
+      <div class="palette">
+        <button data-color="#e74c3c" title="Rouge" style="background:#e74c3c"></button>
+        <button data-color="#27ae60" title="Vert"  style="background:#27ae60"></button>
+        <button data-color="#2980b9" title="Bleu"  style="background:#2980b9"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scène AR.js -->
   <a-scene
     embedded
     renderer="alpha: true; logarithmicDepthBuffer: true"
     arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: true;"
     vr-mode-ui="enabled: false"
   >
-    <!-- Marqueur Hiro -->
+    <!-- Marker Hiro (Ex.2 + Ex.3 + Ex.6) -->
     <a-marker id="hiroMarker" preset="hiro" emitevents="true">
-      <!-- Boîte cliquable (Ex.3) -->
+      <!-- Boîte cliquable -->
       <a-box id="rotBox" class="clickable"
              position="0 0.5 0"
              material="color: #4CC3D9; opacity: 0.65; shader: flat"
@@ -52,58 +78,69 @@
       </a-box>
     </a-marker>
 
-    <!-- Caméra AR + curseur pour clic/tap (Ex.3) -->
+    <!-- Marker personnalisé (Ex.4) — nécessite custom-marker.patt à la racine -->
+    <a-marker id="customMarker" type="pattern" url="custom-marker.patt" emitevents="true">
+      <a-sphere position="0 0.5 0" radius="0.5" color="#9b59b6"
+                animation="property: rotation; to: 360 0 0; loop: true; dur: 3000; easing: linear;">
+      </a-sphere>
+    </a-marker>
+
+    <!-- Caméra + curseur (clic/tap) -->
     <a-entity camera>
       <a-cursor raycaster="objects: .clickable" cursor="rayOrigin: mouse"></a-cursor>
     </a-entity>
-
-    <!-- Marker personnalisé (pattern) : objet différent de la boîte -->
-<a-marker type="pattern" url="pattern-CAMELEON.patt">
-  <a-sphere position="0 0.5 0" radius="0.5" color="#9b59b6"
-            animation="property: rotation; to: 360 0 0; loop: true; dur: 3000; easing: linear;">
-  </a-sphere>
-</a-marker>
-
   </a-scene>
 
   <script>
-    // Ex.2 : Met à jour l'UI selon la détection
     document.addEventListener('DOMContentLoaded', () => {
-      const hint = document.getElementById('hint');
+      const hint   = document.getElementById('hint');
       const status = document.getElementById('status');
-      const marker = document.getElementById('hiroMarker');
+      const ui     = document.getElementById('ui');
+      const size   = document.getElementById('size');
+      const box    = document.getElementById('rotBox');
+      const hiro   = document.getElementById('hiroMarker');
+      const custom = document.getElementById('customMarker');
+      const colorBtns = document.querySelectorAll('#ui [data-color]');
 
-      const onFound = () => {
-        if (hint) hint.style.display = 'none';
-        if (status) status.textContent = 'Marqueur détecté ✔';
-      };
-      const onLost = () => {
-        if (hint) hint.style.display = 'block';
-        if (status) status.textContent = 'Marqueur perdu… rapprochez/stabilisez le motif.';
-      };
+      /* Ex.2 : état + Ex.6 : UI visible uniquement quand Hiro est détecté */
+      const showUI = () => { ui.style.display = 'block'; };
+      const hideUI = () => { ui.style.display = 'none'; };
 
-      marker.addEventListener('markerFound', onFound);
-      marker.addEventListener('markerLost', onLost);
-    });
+      const onHiroFound = () => { status.textContent = 'Hiro détecté ✔'; hint.style.display = 'none'; showUI(); };
+      const onHiroLost  = () => { status.textContent = 'Hiro perdu… rapprochez/stabilisez.'; hint.style.display = 'block'; hideUI(); };
 
-    // Ex.3 : Interaction clic/tap sur la boîte -> couleur + vitesse
-    document.addEventListener('DOMContentLoaded', () => {
-      const box = document.getElementById('rotBox');
+      hiro.addEventListener('markerFound', onHiroFound);
+      hiro.addEventListener('markerLost',  onHiroLost);
+
+      /* (Optionnel) Afficher un statut quand le marker perso est détecté */
+      if (custom) {
+        custom.addEventListener('markerFound', () => { status.textContent = 'Marker perso détecté ✔'; });
+        custom.addEventListener('markerLost',  () => { status.textContent = 'Marker perso perdu…'; });
+      }
+
+      /* Ex.6 : slider -> change l'échelle en temps réel */
+      size.addEventListener('input', (e) => {
+        const s = parseFloat(e.target.value);
+        box.setAttribute('scale', `${s} ${s} ${s}`);
+      });
+
+      /* Ex.6 : palette -> change immédiate de couleur */
+      colorBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const col = btn.getAttribute('data-color');
+          box.setAttribute('material', `color: ${col}; opacity: 0.65; shader: flat`);
+        });
+      });
+
+      /* Ex.3 : clic/tap sur la boîte -> alterne vitesse + cycle couleur */
       const colors = ['#4CC3D9', '#EF2D5E', '#27ae60', '#2980b9'];
-      let i = 0;
-      let fast = false;
-
+      let i = 0, fast = false;
       box.addEventListener('click', () => {
-        // 1) Change de couleur
         i = (i + 1) % colors.length;
-        box.setAttribute('material', 'color', colors[i]);
-
-        // 2) Alterne vitesse de rotation (4000ms -> 1000ms)
+        box.setAttribute('material', `color: ${colors[i]}; opacity: 0.65; shader: flat`);
         fast = !fast;
         const dur = fast ? 1000 : 4000;
-        box.setAttribute('animation',
-          `property: rotation; to: 0 360 0; loop: true; dur: ${dur}; easing: linear;`
-        );
+        box.setAttribute('animation', `property: rotation; to: 0 360 0; loop: true; dur: ${dur}; easing: linear;`);
       });
     });
   </script>

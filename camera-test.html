@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test Caméra — getUserMedia</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; background:#000; }
+    main { display:flex; align-items:center; justify-content:center; height:100%; }
+    video { width: min(100vw, 100vh); max-width: 100%; background:#000; }
+    #err { position: fixed; left: 50%; transform: translateX(-50%); bottom: 12px; color: #fff; background: rgba(0,0,0,.6); padding: 8px 12px; border-radius: 8px; font: 14px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  </style>
+</head>
+<body>
+  <main>
+    <video id="v" autoplay playsinline muted></video>
+  </main>
+  <div id="err" hidden></div>
+  <script>
+    (async () => {
+      const videoElement = document.getElementById('v');
+      const errBox = document.getElementById('err');
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('getUserMedia non supporté par ce navigateur');
+        }
+        const constraints = {
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoElement.srcObject = stream;
+        await videoElement.play();
+      } catch (e) {
+        console.error(e);
+        errBox.textContent = `${e.name || 'Erreur'}: ${e.message || e.toString()}`;
+        errBox.hidden = false;
+      }
+    })();
+  </script>
+  </body>
+  </html>
+
+

@@ -5,12 +5,12 @@
   <title>TP02 WebAR — Exercice 2</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#000000" />
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- A-Frame (1.3.0 recommandé pour AR.js) -->
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <!-- AR.js (A-Frame build) -->
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+    html, body { margin: 0; padding: 0; height: 100%; background: transparent; overflow: hidden; }
     /* Petit panneau d'aide à l'écran */
     #hint {
       position: fixed; left: 50%; transform: translateX(-50%);
@@ -27,12 +27,12 @@
   <!-- Scène AR.js (embedded pour occuper la page) -->
   <a-scene
     embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
+    arjs="sourceType: webcam; facingMode: environment; detectionMode: mono; maxDetectionRate: 30; sourceWidth: 1280; sourceHeight: 720; videoTexture: true; debugUIEnabled: true;"
     vr-mode-ui="enabled: false"
-    renderer="logarithmicDepthBuffer: true"
+    renderer="alpha: true; logarithmicDepthBuffer: true"
   >
     <!-- Marqueur Hiro -->
-    <a-marker id="hiroMarker" preset="hiro">
+    <a-marker id="hiroMarker" preset="hiro" emitevents="true" patternRatio="0.5" smooth="true" smoothCount="5" smoothTolerance="0.01" smoothThreshold="2">
       <!-- Boîte semi-transparente qui tourne en continu
            shader: flat => visible sans lumière explicite -->
       <a-box id="rotBox"
@@ -47,12 +47,36 @@
   </a-scene>
 
   <script>
-    // Masquer l'astuce dès qu'un marker est trouvé (optionnel)
+    // Affiche l'état de détection du marqueur et masque l'astuce au besoin
     document.addEventListener('DOMContentLoaded', () => {
       const hint = document.getElementById('hint');
       const marker = document.getElementById('hiroMarker');
-      const hideHint = () => { if (hint) hint.style.display = 'none'; };
-      marker.addEventListener('markerFound', hideHint);
+
+      // Petit bandeau de statut
+      const status = document.createElement('div');
+      status.style.position = 'fixed';
+      status.style.top = '12px';
+      status.style.left = '50%';
+      status.style.transform = 'translateX(-50%)';
+      status.style.padding = '6px 10px';
+      status.style.borderRadius = '8px';
+      status.style.background = 'rgba(0,0,0,.55)';
+      status.style.color = '#fff';
+      status.style.font = '14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+      status.style.zIndex = '10';
+      status.textContent = 'En attente du marqueur Hiro…';
+      document.body.appendChild(status);
+
+      const onFound = () => {
+        if (hint) hint.style.display = 'none';
+        status.textContent = 'Marqueur détecté ✔';
+      };
+      const onLost = () => {
+        status.textContent = 'Marqueur perdu… approchez et stabilisez le motif.';
+      };
+
+      marker.addEventListener('markerFound', onFound);
+      marker.addEventListener('markerLost', onLost);
     });
   </script>
 </body>
